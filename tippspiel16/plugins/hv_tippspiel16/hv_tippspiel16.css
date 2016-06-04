@@ -1,0 +1,90 @@
+table.tippspiel16
+{
+    border-collapse: collapse;
+    border-style:solid;
+    border:none;
+    border-width:0px;
+}
+tr td
+{
+    border:none;
+}
+tr.zebra:nth-child(odd)
+{
+    background-color: #eee;
+}
+
+div.teamlong
+{
+    display:block;
+}
+td.hv_tippspiel_teamlong
+{
+    width:3ch;
+}
+div.hv_tippspiel_teamshort
+{
+    display:none;
+}
+
+td.hv_tippspiel_datelong
+{
+}
+td.hv_tippspiel_team1
+{
+     text-align:right;
+     width:25%;
+}
+td.hv_tippspiel_team2
+{
+     text-align:left;
+     width:25%;
+}
+td.hv_tippspiel_tipp_option
+{
+    width:13ch;
+    white-space:nowrap;
+    text-align:center;
+}
+
+td.hv_tippspiel_tipp_date
+{
+    white-space:nowrap;
+}
+
+@media screen and (max-width: 40em)
+{
+    td.hv_tippspiel_datelong
+    {
+    }
+    div.hv_tippspiel_teamlong
+    {
+        display:none;
+    }
+    td.hv_tippspiel_teamlong
+    {
+        display:none;
+    }
+    div.hv_tippspiel_teamshort
+    {
+        display:block;
+    }
+}
+@media screen and (max-width: 23em)
+{
+    td.hv_tippspiel_datelong
+    {
+        display:none;
+    }
+    
+    td.hv_tippspiel_team1
+    {
+         text-align:left;
+         width:25%;
+    }
+    td.hv_tippspiel_team2
+    {
+         text-align:right;
+         width:25%;
+    }
+}

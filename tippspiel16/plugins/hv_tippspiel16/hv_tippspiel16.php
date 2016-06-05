@@ -303,7 +303,6 @@
       $teilnehmer[$u->ID] = hv_tippspiel16_calculate_user( $u->ID, $matches );
     }
    }
-   
    return hv_tippspiel16_sort_and_make_rank( $teilnehmer );
  }
  
@@ -560,6 +559,48 @@
        
        if( $_REQUEST["request"] == "submit" )
        {
+         $profile_is_submitted = true;
+         if( $_REQUEST["tippspiel16_torschuetze"] < 0 )
+         {
+           if( strlen( $_REQUEST["tippspiel16_torschuetze_new"] ) > 1 )
+           {
+             $wpdb->insert( hv_tippspiel16_get_table_torschuetzen(),
+                     array(
+                    'Name' => $_REQUEST["tippspiel16_torschuetze_new"]
+                     ) );
+             $newtorschuetzeid = $wpdb->insert_id;
+           }
+           else $newtorschuetzeid = 0;
+         }
+         else
+         {
+           $newtorschuetzeid = $_REQUEST["tippspiel16_torschuetze"];
+         }
+         
+         $oldprofile = hv_tippspiel16_get_profile( $current_user->ID );
+         if( !hv_tippspiel16_is_started() )
+         {
+           if( count( $oldprofile) > 0 )
+           {
+             $wpdb->update( hv_tippspiel16_get_table_users(),
+                    array(
+                   'WeltmeisterID' => $_REQUEST["tippspiel16_meister"],
+                   'TorschuetzeID' => $newtorschuetzeid,
+                    ),
+                    array( 'ID' => $current_user->ID ) );
+           }
+           else
+           {
+             $wpdb->insert( hv_tippspiel16_get_table_users(),
+                    array(
+                   'ID' => $current_user->ID,
+                   'WeltmeisterID' => $_REQUEST["tippspiel16_meister"],
+                   'TorschuetzeID' => $newtorschuetzeid,
+                   'ClubID' => 0
+                    ) );
+           }
+         }
+         
          foreach( $matches as $m )
          {
            if( $m->Datum > time()+$hv_tippspiel16_changetime )
@@ -591,8 +632,77 @@
          }
        }
        
+       $torschuetzen = $wpdb->get_results( "SELECT * FROM ".hv_tippspiel16_get_table_torschuetzen() );
+       $currentProfile = hv_tippspiel16_get_profile( $current_user->ID );
+       $currentMeister = 0;
+       $currentTorschuetze = 0;
+       if( count($currentProfile) > 0 )
+       {
+         $currentMeister = $currentProfile->WeltmeisterID;
+         $currentTorschuetze = $currentProfile->TorschuetzeID;
+       }
+       
        $result  = "<form name='form1' method='post' action='".get_permalink()."'>";
        $result .= "<input type='hidden' name='action' value='tipp' />";
+       
+       $result .= "<table class='tippspiel16'>";
+              
+       $result .= "<tr>";
+       $result .= "<td>Europameister</td>";
+       $result .= "<td>";
+       if( $profile_is_submitted  || hv_tippspiel16_is_started()  )
+       {
+         if( $currentMeister > 0 )
+           $result .= hv_tippspiel16_get_team_name( $currentMeister);
+         else
+           $result .= "-";
+       }
+       else
+       {
+         $result .= "<select style='width:100%' name='tippspiel16_meister'>";
+         $result .= "<option value='0'>-</option>";
+         foreach( $team as $t )
+         {
+           $result .= "<option value='".$t->TeamID."'";
+           if( $currentMeister == $t->TeamID )
+             $result .= " selected='selected'";
+           $result .= ">".$t->Name."</option>";
+         }
+         $result .= "</select>";
+       }
+       $result .= "</td>";
+       $result .= "<td></td>";
+       $result .= "</tr>";
+       
+       $result .= "<tr>";
+       $result .= "<td>Torsch&uuml;tzenk&ouml;nig</td>";
+       $result .= "<td>";
+       if( $profile_is_submitted || hv_tippspiel16_is_started() )
+       {
+        if( $currentTorschuetze > 0 )
+           $result .= hv_tippspiel16_get_torschuetze_name( $currentTorschuetze);
+         else
+           $result .= "-";
+       }
+       else
+       {
+         $result .= "<select style='width:100%' name='tippspiel16_torschuetze'>";
+         $result .= "<option value='0'>-</option>";
+         $result .= "<option value='-1'>Hinzufügen:</option>";
+         foreach( $torschuetzen as $t )
+         {
+           $result .= "<option value='".$t->ID."'";
+           if( $currentTorschuetze == $t->ID )
+             $result .= " selected='selected'";
+           $result .= ">".$t->Name."</option>";
+         }
+         $result .= "</select>";
+       }
+       $result .= "</td>";
+       $result .= "<td>";
+       if( !$profile_is_submitted && !hv_tippspiel16_is_started() ) $result .= "<input type='text' name='tippspiel16_torschuetze_new' />";
+       $result .= "</td>";
+       $result .= "</tr></table>";
        
        $result .= "<table class='tippspiel16'>";
        foreach( $matches as $m )

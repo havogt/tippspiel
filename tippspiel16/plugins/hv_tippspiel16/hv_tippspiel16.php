@@ -917,6 +917,8 @@
                     ) );
            }
          }
+         
+         wp_update_user( array( 'ID' => $current_user->ID, 'display_name' => $_REQUEST["tippspiel16_name_new"] ) );
         
        }
        
@@ -1026,6 +1028,16 @@
        if( !$profile_is_submitted ) $result .= "<input type='text' name='tippspiel16_club_new'/>";
        $result .= "</td>";
        $result .= "</tr>";
+       
+       $result .= "<tr>";
+       $result .= "<td>Name</td>";
+       $result .= "<td>";
+       if( !$profile_is_submitted )
+         $result .= "<input type='text' name='tippspiel16_name_new' value='".$current_user->display_name."'/>";
+       else
+         $result .= $_REQUEST["tippspiel16_name_new"];
+       $result .= "</td>";
+       $result .= "<td></td>";
        
        $result .= "</table>";
         

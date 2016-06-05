@@ -5,10 +5,17 @@ table.tippspiel16
     border:none;
     border-width:0px;
 }
+
+thead.tippspiel16 th
+{
+    border:none;
+}
+
 tr td
 {
     border:none;
 }
+
 tr.zebra:nth-child(odd)
 {
     background-color: #eee;
@@ -50,6 +57,17 @@ td.hv_tippspiel_tipp_option
 td.hv_tippspiel_tipp_date
 {
     white-space:nowrap;
+}
+
+.hv_tippspiel_tab_rank
+{
+    width:4ch;
+}
+
+.hv_tippspiel_tab_points
+{
+    width:8ch;
+    text-align:right;
 }
 
 @media screen and (max-width: 40em)

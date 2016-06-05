@@ -9,6 +9,9 @@
  * License: GNU General Public License v2 or later
  * Text Domain: hv-tippspiel16
  */
+
+ 
+ require_once( "hv_tippspiel16_variables.php" );
  
  function hv_tippspiel16_register_style()
  {
@@ -73,8 +76,15 @@
  function hv_tippspiel16_get_profile( $id )
  {
    global $wpdb;
-   $result =$wpdb->get_row( "SELECT * FROM ".hv_tippspiel16_get_table_users()." WHERE ID = ".$id );
-   return $results;
+   return $wpdb->get_row( "SELECT * FROM ".hv_tippspiel16_get_table_users()." WHERE ID = ".$id );
+ }
+ 
+ function hv_tippspiel16_is_started()
+ {
+   global $wpdb;
+   global $hv_tippspiel16_changetime;
+   $firstmatch_time = $wpdb->get_var( "SELECT Datum FROM ".hv_tippspiel16_get_table_matches()." ORDER BY Datum LIMIT 0,1");
+   return (time() + $hv_tippspiel16_changetime > $firstmatch_time );
  }
  
  function hv_tippspiel16_init( $content )
@@ -126,42 +136,374 @@
     }
  }
  
- function hv_tippspiel16_add_tabelle( $atts, $content = null )
+ function hv_tippspiel16_calculate_match( $tipp1, $tipp2, $goal1, $goal2 )
+ {
+   global $hv_tippspiel16_points_exact;
+   global $hv_tippspiel16_points_diff;
+   global $hv_tippspiel16_points_tendency;
+   if( ($tipp1 == $goal1) && ($tipp2 == $goal2) ) $result = $hv_tippspiel16_points_exact;
+   elseif( ($tipp1 - $tipp2 ) == ($goal1 - $goal2 ) ) $result =  $hv_tippspiel16_points_diff;
+   elseif( ( ($tipp1 > $tipp2 ) && ($goal1 > $goal2 ) ) || (($tipp1 < $tipp2 ) && ($goal1 < $goal2 ) ) ) $result = $hv_tippspiel16_points_tendency;
+   else $result = 0;
+   return $result;
+ }
+
+ function hv_tippspiel16_get_cupwinner_points( $id )
+ {
+   global $hv_tippspiel16_cup_winner_id;
+   global $hv_tippspiel16_points_for_cup;
+   if( $hv_tippspiel16_cup_winner_id == $id ) return $hv_tippspiel16_points_for_cup;
+   else return 0;
+ }
+ 
+ function hv_tippspiel16_get_torschuetze_points( $id )
+ {
+   global $hv_tippspiel16_torschuetze_id;
+   global $hv_tippspiel16_points_for_torschuetze;
+   if( $hv_tippspiel16_torschuetze_id == $id ) return $hv_tippspiel16_points_for_torschuetze;
+   else return 0;
+ }
+ 
+ function hv_tippspiel16_get_matches()
  {
    global $wpdb;
-   
-   if( isset( $_GET['matchid'] ) && $_GET['matchid'] > 0 )
+   $temp = $wpdb->get_results( "SELECT * FROM ".hv_tippspiel16_get_table_matches(). " ORDER BY Datum" );
+   foreach( $temp as $t )
    {
-     $m = $wpdb->get_row( "SELECT * FROM ".hv_tippspiel16_get_table_matches()." WHERE ID=".$_GET['matchid'].";" );
-     $team1 = $wpdb->get_row("SELECT * FROM ".hv_tippspiel16_get_table_teams()." WHERE TeamID=".$m->Team1.";");
-     $team2 = $wpdb->get_row("SELECT * FROM ".hv_tippspiel16_get_table_teams()." WHERE TeamID=".$m->Team2.";");
-     
-     $result = $team1->Name." vs. ".$team2->Name;
-     $result .= "<p><a href=\"".get_page_link()."\">Zur&uuml;ck</a></p>";
+     $matches[$t->ID] = $t;
+   }
+   return $matches;
+ }
+ 
+ function hv_tippspiel16_get_teams()
+ {
+   global $wpdb;
+   $temp = $wpdb->get_results( "SELECT * FROM ".hv_tippspiel16_get_table_teams() );
+   foreach( $temp as $t )
+   {
+     $team[$t->TeamID]=$t;
+   }
+   return $team;
+ }
+ 
+ /**
+  * From http://php.net/manual/de/function.sort.php
+  */
+ function array_sort($array, $on, $order=SORT_ASC)
+ {
+     $new_array = array();
+     $sortable_array = array();
+ 
+     if (count($array) > 0) {
+         foreach ($array as $k => $v) {
+             if (is_array($v)) {
+                 foreach ($v as $k2 => $v2) {
+                     if ($k2 == $on) {
+                         $sortable_array[$k] = $v2;
+                     }
+                 }
+             } else {
+                 $sortable_array[$k] = $v;
+             }
+         }
+ 
+         switch ($order) {
+             case SORT_ASC:
+                 asort($sortable_array);
+             break;
+             case SORT_DESC:
+                 arsort($sortable_array);
+             break;
+         }
+ 
+         foreach ($sortable_array as $k => $v) {
+             $new_array[$k] = $array[$k];
+         }
+     }
+ 
+     return $new_array;
+ }
+ 
+ function hv_tippspiel16_calculate_user( $userid, $matches )
+ {
+   global $wpdb;
+   $u = get_userdata( $userid );
+   $profile = $wpdb->get_row( "SELECT * FROM ".hv_tippspiel16_get_table_users()." WHERE ID = ".$userid );
+   if( count( $profile ) > 0 )
+   {
+     $profileClubID = $profile->ClubID;
+     $profileWeltmeisterID = $profile->WeltmeisterID;
+     $profileTorschuetzeID = $profile->TorschuetzeID;
    }
    else
    {
-     $matches = $wpdb->get_results("SELECT * FROM ".hv_tippspiel16_get_table_matches()." ORDER BY Datum;");
-     $result = "<table><thead><tr><th>Zeit</th><th>Team 1</th><th>Team 2</th><th>Resultat</th></tr></thead><tbody>";
-  
-     foreach ( $matches as $m )
-     {
-       $team1 = $wpdb->get_row("SELECT * FROM ".hv_tippspiel16_get_table_teams()." WHERE TeamID=".$m->Team1.";");
-       $team2 = $wpdb->get_row("SELECT * FROM ".hv_tippspiel16_get_table_teams()." WHERE TeamID=".$m->Team2.";");
-      
-       $result .= "<tr onclick=\"document.location = '";
-       $result .= get_page_link();
-       $result .= "?matchid=".$m->ID."';\">";
-       $result .= "<td>".date("d.m. H:i", $m->Datum+get_option( 'gmt_offset' ) * 3600)."</td>";
-       $result .= "<td>".$team1->Name."</td>";
-       $result .= "<td>".$team2->Name."</td>";
-       $result .= "<td>0</td>";
-       $result .= "</tr>";
-     }
-     $result .= "</tbody>";
-     $result .= "</table>";
+     $profileClubID = 0;
+     $profileWeltmeisterID = 0;
+     $profileTorschuetzeID = 0;
    }
+   
+   
+   $teilnehmer["ID"] = $u->ID;
+   $teilnehmer["Name"] = $u->display_name;
+   $teilnehmer["ClubID"] = $profileClubID;
+   $teilnehmer["WeltmeisterID"] = $profileWeltmeisterID;
+   $teilnehmer["TorschuetzeID"] = $profileTorschuetzeID;
+   
+   $tipps = $wpdb->get_results( "SELECT * FROM ".hv_tippspiel16_get_table_tipps()." WHERE UserID = ".$u->ID );
+  
+   $teilnehmer["points"] = 0;
+   $teilnehmer["points"] += hv_tippspiel16_get_cupwinner_points( $teilnehmer["WeltmeisterID"] );
+   $teilnehmer["points"] += hv_tippspiel16_get_torschuetze_points( $teilnehmer["TorschuetzeID"] );
+   if( count( $tipps ) > 0 )
+   {
+     foreach( $tipps as $t )
+     {
+       $teilnehmer["tipp"][$t->MatchID] = $t;
+       if( ($matches[$t->MatchID]->Goals1 != -1) && ($matches[$t->MatchID]->Goals2 != -1) )
+       {
+         $teilnehmer["points"] += hv_tippspiel16_calculate_match( $t->Goals1, $t->Goals2, $matches[$t->MatchID]->Goals1, $matches[$t->MatchID]->Goals2 );
+       }
+     }
+   }
+   return $teilnehmer;
+ }
+ 
+ function hv_tippspiel16_sort_and_make_rank( $array )
+ {
+   $array = array_sort( $array, 'points', SORT_DESC );
+   $curpoints = PHP_INT_MAX;
+   $currank = 1;
+   $currank_display = $currank;
+   foreach( $array as $key => $t )
+   {
+     if( $t["points"] < $curpoints )
+     {
+       $curpoints = $t["points"];
+       $currank_display = $currank;
+     }
+     $array[$key]["rank"] = $currank_display;
+     $currank++;
+   }
+   return $array;
+ }
+ 
+ function hv_tippspiel16_calculate_users( $clubid="all" )
+ {
+   global $wpdb;
+   if( $clubid == "" ) $clubid = "all";
+  
+   $matches = hv_tippspiel16_get_matches();
+   
+   $tmp_users = get_users( 'role=subscriber' );
+   foreach( $tmp_users as $u )
+   {
+    $profile = $wpdb->get_row( "SELECT * FROM ".hv_tippspiel16_get_table_users()." WHERE ID = ".$u->ID );
+    if( $clubid == "all" || (count($profile) > 0 && $clubid == $profile->ClubID ) )
+    {
+      $teilnehmer[$u->ID] = hv_tippspiel16_calculate_user( $u->ID, $matches );
+    }
+   }
+   
+   return hv_tippspiel16_sort_and_make_rank( $teilnehmer );
+ }
+ 
+ function hv_tippspiel16_calculate_clubs()
+ {
+   $users = hv_tippspiel16_calculate_users();
+   
+   foreach( $users as $u )
+   {
+     if( $u["ClubID"] > 0 )
+     {
+       if( !isset( $clubs[$u["ClubID"]] ) )
+       {
+         $clubs[$u["ClubID"]]["points"] = 0;
+         $clubs[$u["ClubID"]]["count"] = 0;
+         $clubs[$u["ClubID"]]["Name"] = hv_tippspiel16_get_club_name( $u["ClubID"] );
+       }
+       $clubs[$u["ClubID"]]["points"] += $u["points"];
+       $clubs[$u["ClubID"]]["count"]++;
+     }
+   }
+   
+   foreach( $clubs as $key => $c )
+   {
+     $clubs[$key]["points"] = $c["points"] / $c["count"];
+   }
+   
+   return hv_tippspiel16_sort_and_make_rank( $clubs );
+ }
+ 
+ function groupid2name( $id )
+ {
+   $name[8] = "1/8";
+   $name[4] = "1/4";
+   $name[2] = "1/2";
+   $name[3] = "Platz 3";
+   $name[1] = "Platz 1";
+   if( isset( $name[$id] ) ) return $name[$id];
+   else return $id;
+ }
+ 
+ 
+ function hv_tippspiel16_tabelle_user( $userid )
+ {
+   global $hv_tippspiel16_club_label;
+   global $hv_tippspiel16_changetime;
+   
+   $matches = hv_tippspiel16_get_matches();
+   $team = hv_tippspiel16_get_teams();
+   $user = hv_tippspiel16_calculate_user( $userid, $matches );
+   
+   
+   
+   $result = "";
+   $result .= "<h3>".$user["Name"]."</h3>";
+   if( hv_tippspiel16_is_started() )
+   {
+     $result .= "<p>Europameister: ".hv_tippspiel16_get_team_name( $user["WeltmeisterID"] );
+     if( hv_tippspiel16_get_cupwinner_points( $user["WeltmeisterID"] ) > 0 )
+     {
+       $result .= " + ".hv_tippspiel16_get_cupwinner_points( $user["WeltmeisterID"] )." Punkte";
+     }
+     $result .= "</br>";
+     $result .= "Torsch&uuml;tzenk&ouml;nig: ".hv_tippspiel16_get_torschuetze_name( $user["TorschuetzeID"] );
+     if( hv_tippspiel16_get_torschuetze_points( $user["TorschuetzeID"] ) > 0 )
+     {
+       $result .= " + ".hv_tippspiel16_get_torschuetze_points( $user["TorschuetzeID"] )." Punkte";
+     }
+     $result .= "</p>";
+   }
+   
+   $result .= "<table class='tippspiel16'>";
+   foreach( $matches as $m )
+   {
+     $result .= "<tr class='zebra'>";
+     $result .= "<td class='hv_tippspiel_teamlong'>".$m->Gruppe."</td>";
+     $result .= "<td class='hv_tippspiel_datelong hv_tippspiel_tipp_date'>".hv_tippspiel16_get_datestring( $m->Datum )."</td>";
+     
+     $result .= "<td class='hv_tippspiel_team1'>";
+     $result .= "<div class='hv_tippspiel_teamlong'>".$team[$m->Team1]->Name."</div>";
+     $result .= "<div class='hv_tippspiel_teamshort'>".$team[$m->Team1]->NameShort."</div>";
+     $result .= "</td>";
+     if( ( time()+$hv_tippspiel16_changetime > $m->Datum ) && isset( $user["tipp"][$m->ID]->Goals1 ) && isset( $user["tipp"][$m->ID]->Goals1 ) )
+     {
+       $result .= "<td style='width:6ch;text-align:center;'>".$user["tipp"][$m->ID]->Goals1.":".$user["tipp"][$m->ID]->Goals2."</td>";
+     }
+     else
+     {
+       $result .= "<td style='width:6ch;text-align:center;'></td>";
+     }
+     $result .= "<td class='hv_tippspiel_team2'>";
+     $result .= "<div class='hv_tippspiel_teamlong'>".$team[$m->Team2]->Name."</div>";
+     $result .= "<div class='hv_tippspiel_teamshort'>".$team[$m->Team2]->NameShort."</div>";
+     $result .= "</td>";
+     $result .= "<td style='width:2ch'>";
+     if( isset( $user["tipp"][$m->ID]->Goals1 ) && isset( $user["tipp"][$m->ID]->Goals2 ) && ( $m->Goals1 > -1 ) && ( $m->Goals2 > -1 )  )
+     {
+       $result .= hv_tippspiel16_calculate_match( $user["tipp"][$m->ID]->Goals1, $user["tipp"][$m->ID]->Goals2, $m->Goals1, $m->Goals2  );
+     }
+     $result .= "</td>";
+     
+     if( ( $m->Goals1 > -1 ) && ( $m->Goals2 > -1 ) )
+     {
+       $result .= "<td style='width:6ch;text-align:center;'>".$m->Goals1.":".$m->Goals2."</td>";
+     }
+     else
+     {
+       $result .= "<td style='width:6ch;text-align:center;'></td>";
+     }
+     
+     $result .= "</tr>";
+}
+   
+   $result .= "</table>";
+   
    return $result;
+ }
+ 
+ function hv_tippspiel16_tabelle( $clubid = 'all' )
+ {
+   global $hv_tippspiel16_club_label;
+   $users = hv_tippspiel16_calculate_users( $clubid );
+   
+   $result = "";
+   
+   if( $clubid != 'all' )
+   {
+     $result .= "<h3>".$hv_tippspiel16_club_label." ".hv_tippspiel16_get_club_name( $clubid )."</h3>";
+   }
+   
+   $result .= "<table class='tippspiel16'><thead class='tippspiel16'><tr><th class='hv_tippspiel_tab_rank'></th><th>Name</th><th>".$hv_tippspiel16_club_label."</th><th class='hv_tippspiel_tab_points'>Punkte</th></tr></thead><tbody>";
+   
+   foreach( $users as $u )
+   {
+     $userlink = array(
+        'show' => 'user',
+        'userid' => $u["ID"]
+        );
+     $clublink = array(
+        'show' => 'club',
+        'clubid' => $u["ClubID"]
+        );
+     
+     $result .= "<tr class='zebra'>";
+     $result .= "<td class='hv_tippspiel_tab_rank'>".$u["rank"]."</td>";
+     $result .= "<td><a href='".add_query_arg( $userlink, get_page_link() )."'>".$u["Name"]."</a></td>";
+     $result .= "<td>";
+     if( $u["ClubID"] > 0 )
+     {
+       $result .= "<a href='".add_query_arg( $clublink, get_page_link() )."'>";
+       $result .= hv_tippspiel16_get_club_name( $u["ClubID"] )."</a>";
+     }
+     $result .= "</td>";
+     $result .= "<td class='hv_tippspiel_tab_points'>".$u["points"]."</td>";
+     $result .= "</tr>";
+   }
+   
+   $result .= "</tbody></table>";
+   
+   return $result;
+ }
+ 
+ function hv_tippspiel16_add_clubtabelle()
+ {
+   global $hv_tippspiel16_club_label;
+   $clubs = hv_tippspiel16_calculate_clubs();
+   
+   $result = "";
+   
+   $result .= "<table class='tippspiel16'><thead class='tippspiel16'><tr><th class='hv_tippspiel_tab_rank'></th><th>Name</th><th>Mitglieder</th><th class='hv_tippspiel_tab_points'>Punkte</th></tr></thead><tbody>";
+   
+   foreach( $clubs as $c )
+   {
+     $result .= "<tr class='zebra'>";
+     $result .= "<td class='hv_tippspiel_tab_rank'>".$c["rank"]."</td>";
+     $result .= "<td>".$c["Name"]."</td>";
+     $result .= "<td>".$c["count"]."</td>";
+     $result .= "<td class='hv_tippspiel_tab_points'>".round($c["points"])."</td>";
+     $result .= "</tr>";
+   }
+   
+   $result .= "</tbody></table>";
+   
+   return $result;
+ }
+ 
+ function hv_tippspiel16_add_tabelle( $atts, $content = null )
+ {
+   switch( $_GET['show'] )
+   {
+     case 'user':
+       return hv_tippspiel16_tabelle_user( $_GET['userid'] );
+       break;
+     case 'club':
+       return hv_tippspiel16_tabelle( $_GET['clubid'] );
+       break;
+     default :
+       return hv_tippspiel16_tabelle();
+       break;
+   }
  }
  
  function hv_tippspiel16_is_player( $user )
@@ -191,9 +533,10 @@
  
  function hv_tippspiel16_add_tippform( $atts, $content = null )
  {
+   global $hv_tippspiel16_changetime;
    if( !is_user_logged_in() )
    {
-     $result = "Bitte <a href=\"".wp_login_url( get_permalink() )." title=\"Login\">einloggen</a> um einen Tipp abzugeben!";
+     $result = "Bitte <a href='".wp_login_url( get_permalink() )."' title='Login'>einloggen</a> um einen Tipp abzugeben!";
    }
    else
    {
@@ -201,7 +544,7 @@
      if( hv_tippspiel16_is_player( $current_user ) )
      {
        global $wpdb;
-       $query = "SELECT * FROM ".hv_tippspiel16_get_table_matches()." WHERE Datum > ".(time()+30*60)." ORDER BY DATUM";
+       $query = "SELECT * FROM ".hv_tippspiel16_get_table_matches()." WHERE Datum > ".(time()+$hv_tippspiel16_changetime)." ORDER BY DATUM";
        $temp = $wpdb->get_results($query);
        foreach( $temp as $t )
        {
@@ -219,7 +562,7 @@
        {
          foreach( $matches as $m )
          {
-           if( $m->Datum > time()+30*60 )
+           if( $m->Datum > time()+$hv_tippspiel16_changetime )
            {
              $tippID = $wpdb->get_var( "SELECT ID FROM ".hv_tippspiel16_get_table_tipps()." WHERE UserID = ".$current_user->ID." AND MatchID = ".$m->ID );
              if( isset( $tippID ) && $tippID > 0 )
@@ -331,7 +674,7 @@
  
  function hv_tippspiel16_add_show_profile( $atts, $content = null )
  {
-   require_once( "hv_tippspiel16_variables.php" );
+   global $hv_tippspiel16_club_label;
   
    $current_user = wp_get_current_user();
    $userid = $current_user->ID;
@@ -347,7 +690,7 @@
    $result .= "</tr>";
    
    $result .= "<tr>";
-   $result .= "<td>Torsch&uuml;tze</td>";
+   $result .= "<td>Torsch&uuml;tzenk&ouml;nig</td>";
    $result .= "<td>".hv_tippspiel16_get_torschuetze_name( $profile->TorschuetzeID )."</td>";
    $result .= "<td></td>";
    $result .= "</tr>";
@@ -363,7 +706,7 @@
  
  function hv_tippspiel16_add_profileform( $atts, $content = null )
  {
-   require_once( "hv_tippspiel16_variables.php" );
+   global $hv_tippspiel16_club_label;
    
    $result = "";
    if( !is_user_logged_in() )
@@ -420,27 +763,49 @@
          }
          
          $oldprofile = hv_tippspiel16_get_profile( $current_user->ID );
-         print_r( $oldprofile );
          if( count( $oldprofile) > 0 )
          {
-           $wpdb->update( hv_tippspiel16_get_table_users(),
+           if( hv_tippspiel16_is_started() )
+           {
+             $wpdb->update( hv_tippspiel16_get_table_users(),
+                    array(
+                   'ClubID' => $newclubid
+                    ),
+                    array( 'ID' => $current_user->ID ) );
+           }
+           else
+           {
+             $wpdb->update( hv_tippspiel16_get_table_users(),
                     array(
                    'WeltmeisterID' => $_REQUEST["tippspiel16_meister"],
                    'TorschuetzeID' => $newtorschuetzeid,
                    'ClubID' => $newclubid
                     ),
                     array( 'ID' => $current_user->ID ) );
+           }
          }
          else
          {
-           $wpdb->insert( hv_tippspiel16_get_table_users(),
+           if( hv_tippspiel16_is_started() )
+           {
+             $wpdb->insert( hv_tippspiel16_get_table_users(),
+                    array(
+                   'ID' => $current_user->ID,
+                   'WeltmeisterID' => 0,
+                   'TorschuetzeID' => 0,
+                   'ClubID' => $newclubid
+                    ) );
+           }
+           else
+           {
+             $wpdb->insert( hv_tippspiel16_get_table_users(),
                     array(
                    'ID' => $current_user->ID,
                    'WeltmeisterID' => $_REQUEST["tippspiel16_meister"],
                    'TorschuetzeID' => $newtorschuetzeid,
                    'ClubID' => $newclubid
                     ) );
-           $result .= $wpdb->last_error;
+           }
          }
         
        }
@@ -468,7 +833,7 @@
        $result .= "<tr>";
        $result .= "<td>Europameister</td>";
        $result .= "<td>";
-       if( $profile_is_submitted )
+       if( $profile_is_submitted  || hv_tippspiel16_is_started()  )
        {
          if( $currentMeister > 0 )
            $result .= hv_tippspiel16_get_team_name( $currentMeister);
@@ -493,9 +858,9 @@
        $result .= "</tr>";
        
        $result .= "<tr>";
-       $result .= "<td>Torsch&uuml;tze</td>";
+       $result .= "<td>Torsch&uuml;tzenk&ouml;nig</td>";
        $result .= "<td>";
-       if( $profile_is_submitted )
+       if( $profile_is_submitted || hv_tippspiel16_is_started() )
        {
         if( $currentTorschuetze > 0 )
            $result .= hv_tippspiel16_get_torschuetze_name( $currentTorschuetze);
@@ -518,7 +883,7 @@
        }
        $result .= "</td>";
        $result .= "<td>";
-       if( !$profile_is_submitted ) $result .= "<input type='text' name='tippspiel16_torschuetze_new' />";
+       if( !$profile_is_submitted && !hv_tippspiel16_is_started() ) $result .= "<input type='text' name='tippspiel16_torschuetze_new' />";
        $result .= "</td>";
        $result .= "</tr>";
        
@@ -580,3 +945,5 @@
  add_shortcode( 'hv_tippspiel16_tabelle', 'hv_tippspiel16_add_tabelle' );
  add_shortcode( 'hv_tippspiel16_tippform', 'hv_tippspiel16_add_tippform' );
  add_shortcode( 'hv_tippspiel16_profileform', 'hv_tippspiel16_add_profileform' );
+ add_shortcode( 'hv_tippspiel16_clubtabelle', 'hv_tippspiel16_add_clubtabelle' );
+ 

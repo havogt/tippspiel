@@ -821,7 +821,7 @@
    $result = "";
    if( !is_user_logged_in() )
    {
-     $result = "Bitte <a href=\"".wp_login_url( get_permalink() )." title=\"Login\">einloggen</a> um deinen Tipp abzugeben!";
+     $result = "Bitte <a href='".wp_login_url( get_permalink() )."' title=\"Login\">einloggen</a> um deinen Tipp abzugeben!";
    }
    else
    {

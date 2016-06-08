@@ -15,7 +15,7 @@ INSERT INTO `HV_TIPPSPIEL16_TEAMS` (`TeamID`, `Name`, `NameShort`) VALUES
 (7, 'Italien', 'ITA'),
 (8, 'Kroatien', 'CRO'),
 (9, 'Nordirland', 'NIR'),
-(10, 'Östereich', 'AUT'),
+(10, 'Österreich', 'AUT'),
 (11, 'Polen', 'POL'),
 (12, 'Portugal', 'POR'),
 (13, 'Irland', 'IRL'),

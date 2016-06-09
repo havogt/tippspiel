@@ -325,7 +325,7 @@
      }
    }
    
-   foreach( $clubs as $key => $c )
+   if( isset($clubs) ) foreach( $clubs as $key => $c )
    {
      $clubs[$key]["points"] = $c["points"] / $c["count"];
    }

@@ -73,6 +73,11 @@
    return $wpdb->get_var( "SELECT Name FROM ".hv_tippspiel16_get_table_clubs()." WHERE ClubID = ".$id );
  }
  
+ function hv_tippspiel16_get_user_name( $id )
+ {
+   return get_userdata( $id )->display_name;
+ }
+ 
  function hv_tippspiel16_get_profile( $id )
  {
    global $wpdb;
@@ -184,6 +189,13 @@
      $team[$t->TeamID]=$t;
    }
    return $team;
+ }
+ 
+ function hv_tippspiel16_get_tipps_of_match( $matchid )
+ {
+   global $wpdb;
+   $temp = $wpdb->get_results( "SELECT * FROM ".hv_tippspiel16_get_table_tipps()." WHERE MatchID = ".$matchid." ORDER BY (Goals1-Goals2) DESC, Goals1" );
+   return $temp;
  }
  
  /**
@@ -377,26 +389,41 @@
    $result .= "<table class='tippspiel16'>";
    foreach( $matches as $m )
    {
+     if( time()+$hv_tippspiel16_changetime > $m->Datum  )
+     {
+       $matchlink = array(
+        'show' => 'match',
+        'matchid' => $m->ID
+        );
+       $linkopen = "<a href='".add_query_arg( $matchlink, get_page_link() )."'>";
+       $linkclose = "</a>";
+     }
+     else
+     {
+       $linkopen = "";
+       $linkclose = "";
+     }
+    
      $result .= "<tr class='zebra'>";
      $result .= "<td class='hv_tippspiel_teamlong'>".$m->Gruppe."</td>";
      $result .= "<td class='hv_tippspiel_datelong hv_tippspiel_tipp_date'>".hv_tippspiel16_get_datestring( $m->Datum )."</td>";
      
-     $result .= "<td class='hv_tippspiel_team1'>";
+     $result .= "<td class='hv_tippspiel_team1'>".$linkopen;
      $result .= "<div class='hv_tippspiel_teamlong'>".$team[$m->Team1]->Name."</div>";
      $result .= "<div class='hv_tippspiel_teamshort'>".$team[$m->Team1]->NameShort."</div>";
-     $result .= "</td>";
+     $result .= $linkclose."</td>";
      if( ( time()+$hv_tippspiel16_changetime > $m->Datum ) && isset( $user["tipp"][$m->ID]->Goals1 ) && isset( $user["tipp"][$m->ID]->Goals1 ) )
      {
-       $result .= "<td style='width:6ch;text-align:center;'>".$user["tipp"][$m->ID]->Goals1.":".$user["tipp"][$m->ID]->Goals2."</td>";
+       $result .= "<td style='width:6ch;text-align:center;'>".$linkopen.$user["tipp"][$m->ID]->Goals1.":".$user["tipp"][$m->ID]->Goals2.$linkclose."</td>";
      }
      else
      {
        $result .= "<td style='width:6ch;text-align:center;'></td>";
      }
-     $result .= "<td class='hv_tippspiel_team2'>";
+     $result .= "<td class='hv_tippspiel_team2'>".$linkopen;
      $result .= "<div class='hv_tippspiel_teamlong'>".$team[$m->Team2]->Name."</div>";
      $result .= "<div class='hv_tippspiel_teamshort'>".$team[$m->Team2]->NameShort."</div>";
-     $result .= "</td>";
+     $result .= $linkclose."</td>";
      $result .= "<td style='width:2ch'>";
      if( isset( $user["tipp"][$m->ID]->Goals1 ) && isset( $user["tipp"][$m->ID]->Goals2 ) && ( $m->Goals1 > -1 ) && ( $m->Goals2 > -1 )  )
      {
@@ -465,6 +492,53 @@
    return $result;
  }
  
+ function hv_tippspiel16_add_match( $atts, $content = null )
+ {
+   if( isset( $_GET["matchid"]) )
+   {
+     return hv_tippspiel16_make_match( $_GET["matchid"] );
+   }
+   else
+   {
+     return "Error: No matchid";
+   }
+ }
+
+ function hv_tippspiel16_make_match( $matchid )
+ {
+   global $wpdb;
+ 
+   $tipps = hv_tippspiel16_get_tipps_of_match( $matchid );
+   
+   $match = $wpdb->get_row( "SELECT * FROM ".hv_tippspiel16_get_table_matches()." WHERE ID=".$matchid );
+      
+   $result = "<h3>".hv_tippspiel16_get_team_name( $match->Team1)." - ".hv_tippspiel16_get_team_name( $match->Team2 )."</h3>";
+   
+   global $hv_tippspiel16_changetime;
+   if( time()+$hv_tippspiel16_changetime > $match->Datum )
+   {
+     $result .= "<table class='tippspiel16'><tbody>";
+     foreach( $tipps as $t )
+     {
+       $profile = hv_tippspiel16_get_profile( $t->UserID );
+       $username = hv_tippspiel16_get_user_name( $t->UserID );
+       
+       $result .= "<tr class='zebra'>";
+       $result .= "<td>".$username."</td>";
+       $result .= "<td>".hv_tippspiel16_get_club_name($profile->ClubID)."</td>";
+       $result .= "<td style='width:6ch;text-align:center;'>".$t->Goals1.":".$t->Goals2."</td>";
+       $result .= "</tr>";
+     }
+     $result .= "</tbody></table>";
+   }
+   else
+   {
+     $result .= "<div>Verf&uuml;gbar ab ".hv_tippspiel16_get_datestring( $match->Datum )."</div>";
+   }
+   
+   return $result;
+ }
+ 
  function hv_tippspiel16_add_clubtabelle()
  {
    global $hv_tippspiel16_club_label;
@@ -499,6 +573,8 @@
      case 'club':
        return hv_tippspiel16_tabelle( $_GET['clubid'] );
        break;
+     case 'match':
+       return hv_tippspiel16_make_match( $_GET['matchid'] );
      default :
        return hv_tippspiel16_tabelle();
        break;
@@ -1068,4 +1144,5 @@
  add_shortcode( 'hv_tippspiel16_tippform', 'hv_tippspiel16_add_tippform' );
  add_shortcode( 'hv_tippspiel16_profileform', 'hv_tippspiel16_add_profileform' );
  add_shortcode( 'hv_tippspiel16_clubtabelle', 'hv_tippspiel16_add_clubtabelle' );
+ add_shortcode( 'hv_tippspiel16_match', 'hv_tippspiel16_add_match' );
  

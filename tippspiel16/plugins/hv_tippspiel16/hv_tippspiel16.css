@@ -59,6 +59,22 @@ td.hv_tippspiel_tipp_date
     white-space:nowrap;
 }
 
+tr.hv_tippspiel_itsme
+{
+    background-color: #bfee90 !IMPORTANT;
+}
+
+tr.hv_tippspiel_link:hover
+{
+    background: yellow;
+    cursor: pointer;
+}
+
+.hv_tippspiel_tab_goal
+{
+    width:4ch;
+}
+
 .hv_tippspiel_tab_rank
 {
     width:4ch;
@@ -66,7 +82,7 @@ td.hv_tippspiel_tipp_date
 
 .hv_tippspiel_tab_points
 {
-    width:8ch;
+    width:9ch;
     text-align:right;
 }
 

@@ -61,6 +61,12 @@
    return $wpdb->get_var( "SELECT Name FROM ".hv_tippspiel16_get_table_teams()." WHERE TeamID = ".$teamid );
  }
  
+ function hv_tippspiel16_get_team_shortname( $teamid )
+ {
+   global $wpdb;
+   return $wpdb->get_var( "SELECT NameShort FROM ".hv_tippspiel16_get_table_teams()." WHERE TeamID = ".$teamid );
+ }
+ 
  function hv_tippspiel16_get_torschuetze_name( $id )
  {
    global $wpdb;
@@ -395,16 +401,12 @@
         'show' => 'match',
         'matchid' => $m->ID
         );
-       $linkopen = "<a href='".add_query_arg( $matchlink, get_page_link() )."'>";
-       $linkclose = "</a>";
+       $result .= "<tr class='hv_tippspiel_link zebra' onclick='document.location = \"".add_query_arg( $matchlink, get_page_link() )."\"'>";
      }
      else
      {
-       $linkopen = "";
-       $linkclose = "";
+       $result .= "<tr class='zebra'>";
      }
-    
-     $result .= "<tr class='zebra'>";
      $result .= "<td class='hv_tippspiel_teamlong'>".$m->Gruppe."</td>";
      $result .= "<td class='hv_tippspiel_datelong hv_tippspiel_tipp_date'>".hv_tippspiel16_get_datestring( $m->Datum )."</td>";
      
@@ -460,10 +462,15 @@
      $result .= "<h3>".$hv_tippspiel16_club_label." ".hv_tippspiel16_get_club_name( $clubid )."</h3>";
    }
    
+   if( is_user_logged_in() )
+     $current_user_id = wp_get_current_user()->ID;
+   
    $result .= "<table class='tippspiel16'><thead class='tippspiel16'><tr><th class='hv_tippspiel_tab_rank'></th><th>Name</th><th>".$hv_tippspiel16_club_label."</th><th class='hv_tippspiel_tab_points'>Punkte</th></tr></thead><tbody>";
    
    foreach( $users as $u )
    {
+     $itsme = ($current_user_id == $u["ID"])?('hv_tippspiel_itsme'):('');
+    
      $userlink = array(
         'show' => 'user',
         'userid' => $u["ID"]
@@ -473,7 +480,7 @@
         'clubid' => $u["ClubID"]
         );
      
-     $result .= "<tr class='zebra'>";
+     $result .= "<tr class='".$itsme." zebra'>";
      $result .= "<td class='hv_tippspiel_tab_rank'>".$u["rank"]."</td>";
      $result .= "<td><a href='".add_query_arg( $userlink, get_page_link() )."'>".$u["Name"]."</a></td>";
      $result .= "<td>";
@@ -507,6 +514,9 @@
  function hv_tippspiel16_make_match( $matchid )
  {
    global $wpdb;
+   
+   if( is_user_logged_in() )
+     $current_user_id = wp_get_current_user()->ID;
  
    $tipps = hv_tippspiel16_get_tipps_of_match( $matchid );
    
@@ -520,10 +530,11 @@
      $result .= "<table class='tippspiel16'><tbody>";
      foreach( $tipps as $t )
      {
+       $itsme = ($current_user_id == $t->UserID )?('hv_tippspiel_itsme'):('');
        $profile = hv_tippspiel16_get_profile( $t->UserID );
        $username = hv_tippspiel16_get_user_name( $t->UserID );
        
-       $result .= "<tr class='zebra'>";
+       $result .= "<tr class='".$itsme." zebra'>";
        $result .= "<td>".$username."</td>";
        $result .= "<td>".hv_tippspiel16_get_club_name($profile->ClubID)."</td>";
        $result .= "<td style='width:6ch;text-align:center;'>".$t->Goals1.":".$t->Goals2."</td>";
@@ -1135,10 +1146,107 @@
      }
    }
    return $result;
- } 
+ }
+ 
+ 
+ class hv_tippspiel16_widget_matches extends WP_Widget
+ {
+   public function __construct()
+   {
+     $widget_ops = array(
+       'description' => 'Shows links to the last matches' );
+     $control_ops = array();
+     parent::__construct( 'hv_tippspiel16_matches', 'Tippspiel Matches', $widget_ops, $control_ops );
+   }
+   
+   function _get_current_page( $instance )
+   {
+     return $instance['page'];
+   }
+   
+   public function form( $instance )
+   {
+     $instance = wp_parse_args( (array)$instance, array('template' => '' ) );
+     $current_page = $this->_get_current_page( $instance );
+     ?>
+     <p>
+       <label for="<?=$this->get_field_id('title')?>">Title</label>
+       <input type="text" class="widefat" id="<?=$this->get_field_id('title')?>" name="<?=$this->get_field_name('title')?>" value="<?php if(isset($instance['title'])) { echo esc_attr($instance['title']);}?>"
+     </p>
+     <p>
+       <label for="<?=$this->get_field_id('page')?>">Link to</label>
+       <select class="widefat" id="<?=$this->get_field_id('page')?>" name="<?=$this->get_field_name('page')?>">
+       <?php
+       $pages = get_pages();
+       foreach( $pages as $p )
+       {?>
+         <option value="<?=$p->ID?>" <?php selected( $current_page, $p->ID ); ?>>
+           <?=$p->post_title?>
+         </option>
+       <?php }
+       ?>
+       </select>
+     </p>
+     <?php
+   }
+   
+   public function update( $new_instance, $old_instance )
+   {
+     $instance['title'] = $new_instance['title'];
+     $instance['page'] = $new_instance['page'];
+     return $instance;
+   }
+   
+   public function widget( $args, $instance )
+   {
+     extract( $args );
+     
+     $current_page = $this->_get_current_page($instance);
+     
+     if( !empty($instance['title'] ) )
+     {
+       $title = $instance['title'];
+     }
+     else
+     {
+       $title = 'Aktuelle Spiele';
+     }
+    
+     global $wpdb;
+
+     $matches = $wpdb->get_results( "SELECT * FROM ".hv_tippspiel16_get_table_matches()." WHERE Datum < ".(time() + $hv_tippspiel16_changetime)." ORDER BY Datum DESC LIMIT 3" );
+     
+     echo $args['before_widget'];
+     echo $args['before_title'] .$title. $args['after_title'];
+     echo "<table class='tippspiel16'>";
+     foreach( $matches as $m )
+     {
+       $matchlink = array(
+        'show' => 'match',
+        'matchid' => $m->ID
+        );
+       $link = add_query_arg( $matchlink, get_page_link( $current_page ) );
+       echo "<tr class='hv_tippspiel_link' onclick='document.location = \"".$link."\"'>";
+       echo "<td style='text-align:left;width:7ch;'>".hv_tippspiel16_get_team_shortname( $m->Team1 )."</td>";
+       echo "<td style='text-align:right;' class='hv_tippspiel_tab_goal'>".(($m->Goals1>=0)?($m->Goals1):(' '))."</td>";
+       echo "<td style='text-align:center;width:1ch;'>-</td>";
+       echo "<td style='text-align:left;' class='hv_tippspiel_tab_goal'>".(($m->Goals2>=0)?($m->Goals2):(' '))."</td>";
+       echo "<td style='text-align:right;width:7ch;'>".hv_tippspiel16_get_team_shortname( $m->Team2 )."</td>";
+       echo "</tr>";
+     }
+     echo "</table>";
+     echo $args['after_widget'];
+   }
+ }
+ 
+ function hv_tippspiel16_widget_register()
+ {
+   register_widget('hv_tippspiel16_widget_matches');
+ }
  
  add_filter( 'init', 'hv_tippspiel16_init' );
  add_action('wp_enqueue_scripts', 'hv_tippspiel16_register_style');
+ add_action('widgets_init', 'hv_tippspiel16_widget_register' );
  add_shortcode( 'hv_tippspiel16_show_profile', 'hv_tippspiel16_add_show_profile' );
  add_shortcode( 'hv_tippspiel16_tabelle', 'hv_tippspiel16_add_tabelle' );
  add_shortcode( 'hv_tippspiel16_tippform', 'hv_tippspiel16_add_tippform' );

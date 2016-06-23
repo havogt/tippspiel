@@ -792,7 +792,7 @@
        $result .= "</tr></table>";
        
        $result .= "<table class='tippspiel16'>";
-       foreach( $matches as $m )
+       if( count( $matches ) > 0 ) foreach( $matches as $m )
        {
          $currentTipp = $wpdb->get_row( "SELECT * FROM ".hv_tippspiel16_get_table_tipps()." WHERE UserID = ".$current_user->ID." AND MatchID = ".$m->ID );
          if( count( $currentTipp ) > 0 )

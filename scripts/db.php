@@ -1,11 +1,13 @@
 <?
-
-$db_host = "db628583980.db.1and1.com";
-$db_user = "dbo628583980";
-$db_pw = "xPAfzyETtAgTOOJupJOY";
-$db_name = "db628583980";
-
-$db_table_suffix_glob = "tipp2016_";
+/**
+ * "db.settings.php" should contain
+ * $db_host = "";
+ * $db_user = "";
+ * $db_pw = "";
+ * $db_name = "";
+ * $db_table_suffix_glob = "";
+ */
+require_once("db.settings.php")
 
 /**
  * Stellt die Verbindung zur Datenbank her.
@@ -24,9 +26,9 @@ function connect_db()
 }
 
 /**
- * Gibt einen Wert aus der Datenbank zurück.
- * Ubergebenes Select-Query sollte nur einen Wert zurückliefern,
- * sonst wird nur der erste Wert des Results zurückgegeben.
+ * Gibt einen Wert aus der Datenbank zurï¿½ck.
+ * Ubergebenes Select-Query sollte nur einen Wert zurï¿½ckliefern,
+ * sonst wird nur der erste Wert des Results zurï¿½ckgegeben.
  * @return DB-Eintrag
  * @author Hadschi
  * @date 18.7.2004
@@ -38,8 +40,8 @@ function db_get( $query )
 }
 
 /**
- * Gibt einzeilige Select-Ergebnisse zurück.
- * Zugriff über $r["<Spaltenname>"]
+ * Gibt einzeilige Select-Ergebnisse zurï¿½ck.
+ * Zugriff ï¿½ber $r["<Spaltenname>"]
  * @return array[]
  * @author Hadschi
  * @date 18.7.2004
@@ -52,8 +54,8 @@ function db_get_array( $query )
 }
 
 /**
- * Gibt mehrzeilige Select-Ergebnisse zurück.
- * Zugriff über $results[<Zeilenindex>]["<Spaltenname>"]
+ * Gibt mehrzeilige Select-Ergebnisse zurï¿½ck.
+ * Zugriff ï¿½ber $results[<Zeilenindex>]["<Spaltenname>"]
  * @return array[][]
  * @author Hadschi
  * @date 18.7.2004
@@ -69,7 +71,7 @@ function db_get_more_array( $query )
 }
 
 /**
- * Führt ein mysql_query() mit übergebenem Query aus.
+ * Fï¿½hrt ein mysql_query() mit ï¿½bergebenem Query aus.
  * @author Hadschi
  * @date 18.7.2004
  */
@@ -84,8 +86,8 @@ function db_query( $query )
 }
 
 /**
- * Führt ein mysql_query() mit übergebenem Query aus und liefert als Return die
- * ID des per autoincrement generierten Primärschlüssel.
+ * Fï¿½hrt ein mysql_query() mit ï¿½bergebenem Query aus und liefert als Return die
+ * ID des per autoincrement generierten Primï¿½rschlï¿½ssel.
  * @return int insert_id
  * @author Hadschi
  * @date 18.7.2004

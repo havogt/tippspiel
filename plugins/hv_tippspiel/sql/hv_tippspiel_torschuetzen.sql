@@ -2,16 +2,21 @@ CREATE TABLE IF NOT EXISTS `HV_TIPPSPIEL_TORSCHUETZEN` (
   `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `Name` varchar(25) COLLATE latin1_german2_ci NOT NULL,
   PRIMARY KEY (`ID`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci AUTO_INCREMENT=11 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci AUTO_INCREMENT=16 ;
 
 INSERT INTO `HV_TIPPSPIEL_TORSCHUETZEN` (`ID`, `Name`) VALUES
-(1, 'Thomas Müller'),
-(2, 'Christiano Ronaldo'),
+(1, 'Neymar'),
+(2, 'Lionel Messi'),
 (3, 'Antoine Griezmann'),
-(4, 'Harry Kane'),
-(5, 'Olivier Giroud'),
-(6, 'Robert Lewandowski'),
-(7, 'Romelu Lukaku'),
-(8, 'Alvaro Morata'),
-(9, 'Mario Gomez'),
-(10, 'Anthony Martial');
+(4, 'Gabriel Jesus'),
+(5, 'Christiano Ronaldo'),
+(6, 'Timo Werner'),
+(7, 'Harry Kane'),
+(8, 'Luis Suarez'),
+(9, 'Romelu Lukaku'),
+(10, 'Kylian Mbappe'),
+(11, 'Thomas Müller'),
+(12, 'Edinson Cavani'),
+(13, 'Sergio Aguero'),
+(14, 'Diego Costa'),
+(15, 'Robert Lewandowski');

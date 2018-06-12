@@ -1,4 +1,4 @@
-table.tippspiel16
+table.hv_tippspiel
 {
     border-collapse: collapse;
     border-style:solid;
@@ -6,7 +6,7 @@ table.tippspiel16
     border-width:0px;
 }
 
-thead.tippspiel16 th
+thead.hv_tippspiel th
 {
     border:none;
 }
@@ -110,7 +110,7 @@ tr.hv_tippspiel_link:hover
     {
         display:none;
     }
-    
+
     td.hv_tippspiel_team1
     {
          text-align:left;

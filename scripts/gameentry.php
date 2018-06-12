@@ -1,9 +1,9 @@
-<? 
+<?php
 require_once "db.php";
 global $db_table_suffix_glob;
-$teams = db_get_more_array( "SELECT * FROM ".$db_table_suffix_glob."teams" ); 
+$teams = db_get_more_array( "SELECT * FROM ".$db_table_suffix_glob."teams" );
 
-$year = 2016;
+$year = 2018;
 
 if( $_POST["request"] == "submit" )
 {
@@ -23,36 +23,36 @@ if( $_POST["request"] == "submit" )
 <body bgcolor="#FFFFFF" text="#000000">
 <form name="form1" method="post" action="">
   <table width="400" border="0" cellspacing="0" cellpadding="0">
-    <tr> 
+    <tr>
       <td>Team 1</td>
-      <td> 
+      <td>
         <select name="team1">
 		<? foreach($teams as $t ) { ?>
-		<option value="<?=$t["TeamID"]?>"> 
+		<option value="<?=$t["TeamID"]?>">
 		<?=$t["Name"]?>
 		</option>
 		<? } ?>
         </select>
       </td>
     </tr>
-    <tr> 
+    <tr>
       <td>Team 2</td>
-      <td> 
+      <td>
         <select name="team2">
 		<? foreach($teams as $t ) { ?>
-		<option value="<?=$t["TeamID"]?>"> 
+		<option value="<?=$t["TeamID"]?>">
 		<?=$t["Name"]?>
 		</option>
 		<? } ?>
         </select>
       </td>
     </tr>
-    <tr> 
+    <tr>
       <td>Datum (Tag Monat Stunde)</td>
-      <td> 
+      <td>
         <select name="day">
-          <? for($i=1;$i<=30;$i++){ ?>
-          <option value="<?=$i?>"> 
+          <? for($i=14;$i<=30;$i++){ ?>
+          <option value="<?=$i?>">
           <?=$i?>
           </option>
 		  <? } ?>
@@ -62,9 +62,14 @@ if( $_POST["request"] == "submit" )
           <option value="7">Juli</option>
         </select>
         <select name="thetime">
-          <option value="15:00">15:00</option>
-          <option value="18:00">18:00</option>
-		  <option value="21:00">21:00</option>
+					<option value="12:00">12:00</option>
+          <option value="14:00">14:00</option>
+					<option value="15:00">15:00</option>
+					<option value="16:00">16:00</option>
+          <option value="17:00">17:00</option>
+					<option value="18:00">18:00</option>
+					<option value="20:00">20:00</option>
+		      <option value="21:00">21:00</option>
         </select>
       </td>
     </tr>
@@ -72,24 +77,24 @@ if( $_POST["request"] == "submit" )
       <td>Gruppe</td>
       <td>
         <select name="group">
-          <!--<option value="A">A</option>
+          <option value="A">A</option>
           <option value="B">B</option>
           <option value="C">C</option>
           <option value="D">D</option>
 		  <option value="E">E</option>
 		  <option value="F">F</option>
 		  <option value="G">G</option>
-		  <option value="H">H</option>--> 
-		  <option value="8">8</option>
+		  <option value="H">H</option>
+		  <!--<option value="8">8</option>
           <option value="4">4</option>
           <option value="2">2</option>
           <option value="3">3</option>
-          <option value="1">1</option>
+          <option value="1">1</option>-->
         </select>
       </td>
     </tr>
-    <tr> 
-      <td> 
+    <tr>
+      <td>
 		<input type="hidden" name="request" value="submit">
         <input type="submit" name="Submit" value="Submit">
       </td>

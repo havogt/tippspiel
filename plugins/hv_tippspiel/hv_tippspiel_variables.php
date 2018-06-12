@@ -2,6 +2,8 @@
 
 $hv_tippspiel_club_label = "Club";
 
+$hv_tippspiel_meisterkind_label = "Weltmeister";
+
 $hv_tippspiel_points_for_cup = 20;
 $hv_tippspiel_points_for_torschuetze = 20;
 $hv_tippspiel_points_exact = 7;

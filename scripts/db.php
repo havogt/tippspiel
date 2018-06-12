@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * "db.settings.php" should contain
  * $db_host = "";
@@ -7,7 +7,7 @@
  * $db_name = "";
  * $db_table_suffix_glob = "";
  */
-require_once("db.settings.php")
+require_once("db.settings.php");
 
 /**
  * Stellt die Verbindung zur Datenbank her.

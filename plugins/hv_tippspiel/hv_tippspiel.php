@@ -3,7 +3,7 @@
  * Plugin Name: Das Tippspiel
  * Plugin URI: http://www.havogt.de
  * Description: Tippspiel for football EURO/WORLD cup
- * Version: 2018.0
+ * Version: 2018.1
  * Author Hannes Vogt
  * Author URI: http://www.havogt.de
  * License: GNU General Public License v2 or later
@@ -367,6 +367,7 @@
  {
    global $hv_tippspiel_club_label;
    global $hv_tippspiel_changetime;
+   global $hv_tippspiel_meisterkind_label;
 
    $matches = hv_tippspiel_get_matches();
    $team = hv_tippspiel_get_teams();
@@ -378,7 +379,7 @@
    $result .= "<h3>".$user["Name"]."</h3>";
    if( hv_tippspiel_is_started() )
    {
-     $result .= "<p>Europameister: ".hv_tippspiel_get_team_name( $user["WeltmeisterID"] );
+     $result .= "<p>".$hv_tippspiel_meisterkind_label.": ".hv_tippspiel_get_team_name( $user["WeltmeisterID"] );
      if( hv_tippspiel_get_cupwinner_points( $user["WeltmeisterID"] ) > 0 )
      {
        $result .= " + ".hv_tippspiel_get_cupwinner_points( $user["WeltmeisterID"] )." Punkte";
@@ -620,6 +621,8 @@
  function hv_tippspiel_add_tippform( $atts, $content = null )
  {
    global $hv_tippspiel_changetime;
+   global $hv_tippspiel_meisterkind_label;
+
    if( !is_user_logged_in() )
    {
      $result = "Bitte <a href='".wp_login_url( get_permalink() )."' title='Login'>einloggen</a> um einen Tipp abzugeben!";
@@ -735,7 +738,7 @@
        $result .= "<table class='hv_tippspiel'>";
 
        $result .= "<tr>";
-       $result .= "<td>Europameister</td>";
+       $result .= "<td>".$hv_tippspiel_meisterkind_label."</td>";
        $result .= "<td>";
        if( $profile_is_submitted  || hv_tippspiel_is_started()  )
        {
@@ -872,6 +875,7 @@
  function hv_tippspiel_add_show_profile( $atts, $content = null )
  {
    global $hv_tippspiel_club_label;
+   global $hv_tippspiel_meisterkind_label;
 
    $current_user = wp_get_current_user();
    $userid = $current_user->ID;
@@ -881,7 +885,7 @@
    $result .= "<table class='hv_tippspiel'>";
 
    $result .= "<tr>";
-   $result .= "<td>Europameister</td>";
+   $result .= "<td>".$hv_tippspiel_meisterkind_label."</td>";
    $result .= "<td>".hv_tippspiel_get_team_name($profile->WeltmeisterID)."</td>";
    $result .= "<td></td>";
    $result .= "</tr>";
@@ -904,6 +908,7 @@
  function hv_tippspiel_add_profileform( $atts, $content = null )
  {
    global $hv_tippspiel_club_label;
+   global $hv_tippspiel_meisterkind_label;
 
    $result = "";
    if( !is_user_logged_in() )
@@ -1030,7 +1035,7 @@
        $result .= "<table class='hv_tippspiel'>";
 
        $result .= "<tr>";
-       $result .= "<td>Europameister</td>";
+       $result .= "<td>".$hv_tippspiel_meisterkind_label."</td>";
        $result .= "<td>";
        if( $profile_is_submitted  || hv_tippspiel_is_started()  )
        {
